@@ -10,7 +10,6 @@ LOCKFILE="$SCRIPTDIR/${SCRIPTNAME%.*}.lock"
 # Log function
 PrintLog(){
  echo "[`date`] - ${*}" >> ${vLOG} 
- sed -i -e :a -e '$q;N;500,$D;ba' ${vLOG}
 }
 
 # Set variables using parameters - m3u url first then output location for strm file folders
@@ -86,7 +85,7 @@ ScanEntries_TV() {
   vSeries="${vChannelName% $vSeasonAndEpisode}"
 #  vSeries=$(echo $vSeries | sed -e 's/[^A-Za-z0-9._- ]//g')
 # write output
-  PrintLog "FOUND - $vSeries from season $vSeason and episode $vEpisode. URL $vMediaUrl"
+#  PrintLog "FOUND - $vSeries from season $vSeason and episode $vEpisode. URL $vMediaUrl"
   WriteSTRMFile_TV
  done
 }
@@ -118,7 +117,7 @@ ScanEntries_Movies() {
   vMovieName="$(echo $vMovieName)" # remove extra spaces?
 #  vMovieName=$(echo $vMovieName | sed -e 's/[^A-Za-z0-9._- ]//g')
 # write output
-  PrintLog "FOUND - $vMovieName. URL $vMediaUrl"
+#  PrintLog "FOUND - $vMovieName. URL $vMediaUrl"
   WriteSTRMFile_Movies
  done
 }
@@ -140,6 +139,7 @@ vTEMPFILE=temp.m3u
 # PROCESSING
 
 cd $SCRIPTDIR
+[ -f "${vLOG}" ] && rm "${vLOG}"
 [ -f "*.m3u" ] && rm "*.m3u"
 [ -f "*.tmp" ] && rm "*.tmp"
 
@@ -155,9 +155,9 @@ fi
 
 wget --quiet -O "$vTEMPFILE" "$vURL" -nv -T 10 -t 1
 if [ $? -ne 0 ]; then
- PrintLog "wget reported an error..."
- ERRORCHECK=1
+ PrintLog "wget reported an error"
  rm "$vTEMPFILE"
+ exit 1
 else
  FILESIZE=$(stat -c%s "$vTEMPFILE")
  PrintLog "wget completed... $vTEMPFILE downloaded ($FILESIZE)"
@@ -209,7 +209,7 @@ fi
 
 # extract tv series vod entries 
 PrintLog "Extracting VOD TV series entries"
-cat 5_vodentries.tmp | grep -E "^.*/series/.*$" > 6_vodentries_tv.tmp
+cat 5_vodentries.tmp | grep -iE "^.*/series/.*$" > 6_vodentries_tv.tmp
 if [ $? -ne 0 ]; then
   echo "ERROR REPORTED"
   exit 1
@@ -217,26 +217,26 @@ fi
 
 # extract movies vod entries 
 PrintLog "Extracting VOD movie entries"
-cat 5_vodentries.tmp | grep -E "^.*/movie/.*$" > 6_vodentries_movies.tmp
+cat 5_vodentries.tmp | grep -iE "^.*/(movie|movies)/.*$" > 6_vodentries_movies.tmp
 if [ $? -ne 0 ]; then
   echo "ERROR REPORTED"
   exit 1
 fi
 
-# write strm files for tv series vod entries
+# write strm files for tv series vod entries - with "S## E##" entry
 input=vodselection-tv
 cat "$input" | while read -r line
  do
-  PrintLog "Processing $line from $input"
-  cat 6_vodentries_tv.tmp | grep -i -E "\"$line\"" | ScanEntries_TV
+#  PrintLog "Processing $line from $input"
+  cat 6_vodentries_tv.tmp | grep -E '^.*S[[:digit:]]{2}[[:space:]]*E[[:digit:]]{2}.*$' | grep -iE "group-title=\"$line\"" | ScanEntries_TV
 done 
 
 # write strm files for movies vod entries
 input=vodselection-movies
 cat "$input" | while read -r line
  do
-  PrintLog "Processing $line from $input"
-  cat 6_vodentries_movies.tmp | grep -i -E "\"$line\"" | ScanEntries_Movies
+#  PrintLog "Processing $line from $input"
+  cat 6_vodentries_movies.tmp | grep -iE "tvg-name=\"$line\"" | ScanEntries_Movies
 done 
 
 [ -f "*.m3u" ] && rm "*.m3u"
