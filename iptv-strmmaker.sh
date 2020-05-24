@@ -4,14 +4,35 @@ SCRIPTDIR="$(cd $(dirname $0) && pwd)"
 vLOG="$SCRIPTDIR/${SCRIPTNAME%.*}.log"
 LOCKFILE="$SCRIPTDIR/${SCRIPTNAME%.*}.lock"
 
-source "$SCRIPTPATH/vodselection-tv"
-source "$SCRIPTPATH/vodselection-movies"
+#source "$SCRIPTDIR/vodselection-tv"
+#source "$SCRIPTDIR/vodselection-movies"
 
 # Log function
 PrintLog(){
  echo "[`date`] - ${*}" >> ${vLOG} 
  sed -i -e :a -e '$q;N;500,$D;ba' ${vLOG}
 }
+
+# Set variables using parameters - m3u url first then output location for strm file folders
+if [ -n "$1" ]; then
+ vURL="$1"
+ if [ -n "$2" ]; then
+  OUTPUTDIR="$2"
+  OUTPUTDIR=${OUTPUTDIR%/}
+  if [ ! -d "$OUTPUTDIR" ]; then
+   PrintLog "ERROR: output path $OUTPUTDIR does not exist"
+   exit 1
+  fi
+ else
+  echo
+  PrintLog "ERROR: need an output path - nothing defined"
+  exit 1
+ fi
+else
+ echo
+ PrintLog "ERROR: need a url to an m3u as input - nothing defined"
+ exit 1
+fi
 
 # This changes each playlist entry to appear on a single line instead of 2 lines
 to_one_line_per_record() {
@@ -36,20 +57,143 @@ from_one_line_per_record() {
   done
 }
 
-vURL=
-vTEMPFILE=
-OUTPUTDIR=
-vFILE=
+ScanEntries_TV() {
+ while read -r catLine; do
+## DO NOT ECHO ENTRIES IN THIS FUNCTION ##
+#  PrintLog "catLine is $catLine (output line)"
+
+# set newLine as default
+  newLine="$catLine"
+# parse url
+  vMediaUrl=http${newLine##*,http}
+# parse existing channel name - from the end of the line before the url
+  vChannelName="${newLine%%,http*}"
+  vChannelName="${vChannelName##*,}"
+  vChannelName="$(echo $vChannelName)" # remove extra spaces?
+# parse season and episode
+  vSeasonAndEpisode="${vChannelName:(-7)}"
+# parse season
+  vSeason="${vSeasonAndEpisode% *}"
+  vSeason="${vSeason#*S}"
+  vSeason="$(expr $vSeason + 0)"
+  printf -v vSeason "%02d" $vSeason
+# parse episode
+  vEpisode="${vSeasonAndEpisode#* }"
+  vEpisode="${vEpisode#*E}"
+  vEpisode="$(expr $vEpisode + 0)"
+  printf -v vEpisode "%02d" $vEpisode
+# parse tv series
+  vSeries="${vChannelName% $vSeasonAndEpisode}"
+# write output
+  PrintLog "FOUND - $vSeries from season $vSeason and episode $vEpisode. URL $vMediaUrl"
+  WriteSTRMFile
+ done
+}
+
+WriteSTRMFile(){
+ #
+ mkdir -p "$OUTPUTDIR/$vSeries/Season $vSeason"
+ vSTRMFile="$OUTPUTDIR/"
+ vSTRMFile+="$vSeries/Season $vSeason/$vSeries "
+ vSTRMFile+="S${vSeason}"
+ vSTRMFile+="E${vEpisode}.strm"
+ echo "$vMediaUrl" > "$vSTRMFile"
+ PrintLog "WROTE - $vSTRMFile"
+}
+
+# VARIABLES
+vTEMPFILE=temp.m3u
+
+# PROCESSING
+
+cd $SCRIPTDIR
+
+if [ ! -f vodselection-tv ]; then
+ PrintLog "vodselection-tv file does not exist. Choose TV series to be included by updating the sample file."
+ exit 1
+fi
+
+if [ ! -f vodselection-movies ]; then
+ PrintLog "vodselection-movies file does not exist. Choose Movies to be included by updating the sample file."
+ exit 1
+fi
 
 wget --quiet -O "$vTEMPFILE" "$vURL" -nv -T 10 -t 1
 if [ $? -ne 0 ]; then
- PrintLog "$vFILE wget reported an error..."
+ PrintLog "wget reported an error..."
  ERRORCHECK=1
  rm "$vTEMPFILE"
 else
- mv "$vTEMPFILE" "$OUTPUTDIR/$vFILE"
- FILESIZE=$(stat -c%s "$OUTPUTDIR/$vFILE")
+ FILESIZE=$(stat -c%s "$vTEMPFILE")
+ PrintLog "wget completed... $vTEMPFILE downloaded ($FILESIZE)"
 fi
 
+# fix line feeds
+sed -i 's/^M$//' "$vTEMPFILE"
+sed -i 's/\r$//' "$vTEMPFILE"
 
+# remove blank lines
+PrintLog "Removing blank lines from $vTEMPFILE"
+cat "$vTEMPFILE" | sed '/^$/d' > 1_remblank.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
 
+# remove commas from between quotes - it breaks splitting to one line and rebuilding back together at the end
+PrintLog "Removing commas from between quotes in file"
+cat 1_remblank.tmp | awk -F'"' -v OFS='"' '{for(i=2;i<NF;i+=2) gsub(",", "", $i)}1' > 2_quotefix.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
+
+# one line per record
+PrintLog "Rebuilding M3U file as single lined entries"
+cat 2_quotefix.tmp | to_one_line_per_record > 3_1line.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
+
+# sort records based on channel name
+PrintLog "Sorting entries based on channel name"
+cat 3_1line.tmp | sort -t, -k2,2 > 4_1linesorted.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
+
+# extract only entries that end with mkv/mp4
+PrintLog "Extracting VOD entries based on file extension"
+cat 4_1linesorted.tmp | grep -E "\.avi$|\.mp4$|\.m4v$|\.mkv$" > 5_vodentries.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
+
+# extract tv series vod entries 
+PrintLog "Extracting VOD TV series entries"
+cat 5_vodentries.tmp | grep -E "^.*/series/.*$" > 6_vodentries_tv.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
+
+# extract movies vod entries 
+PrintLog "Extracting VOD movie entries"
+cat 5_vodentries.tmp | grep -E "^.*/movie/.*$" > 6_vodentries_movies.tmp
+if [ $? -ne 0 ]; then
+  echo "ERROR REPORTED"
+  exit 1
+fi
+
+input=vodselection-tv
+cat "$input" | while read -r line
+ do
+  PrintLog "Processing $line from $input"
+  cat 6_vodentries_tv.tmp | grep "$line" | ScanEntries_TV
+done 
+
+rm *.m3u
+rm *.tmp

@@ -1,1 +1,6 @@
 iptv-m3u-*
+*.m3u
+*.tmp
+*.log
+vodselection-tv
+vodselection-movies
