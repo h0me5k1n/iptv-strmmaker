@@ -1,5 +1,5 @@
 # iptv-strmmaker
-Download an m3u file from a http location and create strm files from the tv series and movie entries.
+UNTESTED... files are written but haven't yet been tested in Emby... Download an m3u file from a http location and create strm files from the tv series and movie entries. 
 
 # Usage
 iptv-strmmaker.sh [m3u url] [output folder]
