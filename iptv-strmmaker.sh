@@ -84,19 +84,52 @@ ScanEntries_TV() {
   printf -v vEpisode "%02d" $vEpisode
 # parse tv series
   vSeries="${vChannelName% $vSeasonAndEpisode}"
+#  vSeries=$(echo $vSeries | sed -e 's/[^A-Za-z0-9._- ]//g')
 # write output
   PrintLog "FOUND - $vSeries from season $vSeason and episode $vEpisode. URL $vMediaUrl"
-  WriteSTRMFile
+  WriteSTRMFile_TV
  done
 }
 
-WriteSTRMFile(){
+WriteSTRMFile_TV(){
  #
- mkdir -p "$OUTPUTDIR/$vSeries/Season $vSeason"
- vSTRMFile="$OUTPUTDIR/"
+ mkdir -p "$OUTPUTDIR/STRM TV/$vSeries/Season $vSeason"
+ vSTRMFile="$OUTPUTDIR/STRM TV/"
  vSTRMFile+="$vSeries/Season $vSeason/$vSeries "
  vSTRMFile+="S${vSeason}"
  vSTRMFile+="E${vEpisode}.strm"
+# vSTRMFile=$(echo $vSTRMFile | sed -e 's/[^A-Za-z0-9._- ]//g')
+ echo "$vMediaUrl" > "$vSTRMFile"
+ PrintLog "WROTE - $vSTRMFile"
+}
+
+ScanEntries_Movies() {
+ while read -r catLine; do
+## DO NOT ECHO ENTRIES IN THIS FUNCTION ##
+#  PrintLog "catLine is $catLine (output line)"
+
+# set newLine as default
+  newLine="$catLine"
+# parse url
+  vMediaUrl=http${newLine##*,http}
+# parse existing channel name - from the end of the line before the url
+  vMovieName="${newLine%%,http*}"
+  vMovieName="${vMovieName##*,}"
+  vMovieName="$(echo $vMovieName)" # remove extra spaces?
+#  vMovieName=$(echo $vMovieName | sed -e 's/[^A-Za-z0-9._- ]//g')
+# write output
+  PrintLog "FOUND - $vMovieName. URL $vMediaUrl"
+  WriteSTRMFile_Movies
+ done
+}
+
+WriteSTRMFile_Movies(){
+ #
+ mkdir -p "$OUTPUTDIR/STRM Movies/$vMovieName"
+ vSTRMFile="$OUTPUTDIR/"
+ vSTRMFile+="STRM Movies/$vMovieName/"
+ vSTRMFile+="$vMovieName.strm"
+# vSTRMFile=$(echo $vSTRMFile | sed -e 's/[^A-Za-z0-9._- ]//g')
  echo "$vMediaUrl" > "$vSTRMFile"
  PrintLog "WROTE - $vSTRMFile"
 }
@@ -107,6 +140,8 @@ vTEMPFILE=temp.m3u
 # PROCESSING
 
 cd $SCRIPTDIR
+[ -f "*.m3u" ] && rm "*.m3u"
+[ -f "*.tmp" ] && rm "*.tmp"
 
 if [ ! -f vodselection-tv ]; then
  PrintLog "vodselection-tv file does not exist. Choose TV series to be included by updating the sample file."
@@ -188,12 +223,24 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# write strm files for tv series vod entries
 input=vodselection-tv
 cat "$input" | while read -r line
  do
   PrintLog "Processing $line from $input"
-  cat 6_vodentries_tv.tmp | grep "$line" | ScanEntries_TV
+  cat 6_vodentries_tv.tmp | grep -i -E "\"$line\"" | ScanEntries_TV
 done 
+
+# write strm files for movies vod entries
+input=vodselection-movies
+cat "$input" | while read -r line
+ do
+  PrintLog "Processing $line from $input"
+  cat 6_vodentries_movies.tmp | grep -i -E "\"$line\"" | ScanEntries_Movies
+done 
+
+[ -f "*.m3u" ] && rm "*.m3u"
+[ -f "*.tmp" ] && rm "*.tmp"
 
 rm *.m3u
 rm *.tmp
