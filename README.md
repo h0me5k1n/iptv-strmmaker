@@ -1,5 +1,7 @@
 # iptv-strmmaker
-UNTESTED... files are written but haven't yet been tested in Emby... Download an m3u file from a http location and create strm files from the tv series and movie entries. 
+Downloads an m3u file from a http location and creates strm files from the tv series and movie entries in dedicated "STRM Movie" and "STRM TV" folders. strm files for movies are created in a folder named after each movie and episodes for TV series' are saved in numbered season folders in a parent folder named after the show.
+
+Tested on ubuntu and a QNAP NAS server.
 
 # Usage
 iptv-strmmaker.sh [m3u url] [output folder]
@@ -26,3 +28,4 @@ The following files should be edited and saved without the ".sample" extensions 
 
 # Notes
 A log file is created - check the output for details of errors and processing activity.
+The m3u playlist can have live tv channels - these will be ignored as long as the urls do not have "/series/", "/movie/" or "/movies/" in them
