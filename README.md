@@ -28,4 +28,4 @@ The following files should be edited and saved without the ".sample" extensions 
 
 # Notes
 A log file is created - check the output for details of errors and processing activity.
-The m3u playlist can have live tv channels - these will be ignored as long as the urls do not have "/series/", "/movie/" or "/movies/" in them
+The m3u playlist can have live tv channels - these will be ignored as long as the urls do not have "/series/", "/movie/" or "/movies/" in them.
