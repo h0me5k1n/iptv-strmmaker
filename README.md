@@ -1,5 +1,5 @@
 # iptv-strmmaker
-Downloads an m3u file from a http location and creates strm files from the tv series and movie entries in dedicated "STRM Movie" and "STRM TV" folders. strm files for movies are created in a folder named after each movie and episodes for TV series' are saved in numbered season folders in a parent folder named after the show.
+Downloads an m3u file from a http location and creates strm files from the tv series and movie entries in dedicated "STRM Movie" and "STRM TV" folders. strm files for movies are created in a folder named after each movie and episodes for TV series' are saved in numbered season folders in a parent folder named after the show. Strm files older than 60 minutes will be deleted in order to purge items that no longer exist.
 
 Tested on ubuntu and a QNAP NAS server.
 

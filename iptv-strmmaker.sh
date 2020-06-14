@@ -239,6 +239,10 @@ cat "$input" | while read -r line
   cat 6_vodentries_movies.tmp | grep -iE "tvg-name=\"$line\"" | ScanEntries_Movies
 done 
 
+# purging strm files older than 60 minutes from 
+find "$OUTPUTDIR/STRM"* -name "*.strm" -mmin +60 -exec rm "{}" \;
+find "$OUTPUTDIR/STRM"* -type d -exec rmdir "{}" + 2>/dev/null
+
 [ -f "*.m3u" ] && rm "*.m3u"
 [ -f "*.tmp" ] && rm "*.tmp"
 
