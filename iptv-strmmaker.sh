@@ -97,9 +97,14 @@ WriteSTRMFile_TV(){
  vSTRMFile+="$vSeries/Season $vSeason/$vSeries "
  vSTRMFile+="S${vSeason}"
  vSTRMFile+="E${vEpisode}.strm"
-# vSTRMFile=$(echo $vSTRMFile | sed -e 's/[^A-Za-z0-9._- ]//g')
- echo "$vMediaUrl" > "$vSTRMFile"
- PrintLog "WROTE - $vSTRMFile"
+# check if file contents are different - only write if different
+ content=$(cat "$vSTRMFile")
+ if [ "$vMediaUrl" != "$content" ];then
+  echo "$vMediaUrl" > "$vSTRMFile"
+  PrintLog "WROTE - $vSTRMFile"
+ else
+  PrintLog "ALREADY EXISTS - $vSTRMFile"
+ fi
 }
 
 ScanEntries_Movies() {
@@ -128,9 +133,14 @@ WriteSTRMFile_Movies(){
  vSTRMFile="$OUTPUTDIR/"
  vSTRMFile+="STRM Movies/$vMovieName/"
  vSTRMFile+="$vMovieName.strm"
-# vSTRMFile=$(echo $vSTRMFile | sed -e 's/[^A-Za-z0-9._- ]//g')
- echo "$vMediaUrl" > "$vSTRMFile"
- PrintLog "WROTE - $vSTRMFile"
+# check if file contents are different - only write if different
+ content=$(cat "$vSTRMFile")
+ if [ "$vMediaUrl" != "$content" ];then
+  echo "$vMediaUrl" > "$vSTRMFile"
+  PrintLog "WROTE - $vSTRMFile"
+ else
+  PrintLog "ALREADY EXISTS - $vSTRMFile"
+ fi
 }
 
 # VARIABLES
