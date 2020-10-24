@@ -166,7 +166,7 @@ WriteSTRMFile_Movies(){
    echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
   else
    AddCounter countMovieCurrent
-   PrintLog "ALREADY EXISTS $countMovieCurrent - $vSTRMFile"
+   PrintLog "ALREADY EXISTS - $vSTRMFile"
    echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
   fi
  else 
@@ -300,6 +300,7 @@ grep -Fxv -f ${vFILEPROCESSEDLOG} ${vFILEEXISTINGLOG} > ${vFILESTODELETE}
 if [ -f "${vFILESTODELETE}" ]; then
  while read -r filename; do
   rm "$filename"
+  PrintLog "DELETED $filename"
   AddCounter countDeleted
  done <${vFILESTODELETE}
 fi
@@ -311,13 +312,13 @@ echo $(cat countMovieCurrent.tmp) current movies
 echo $(cat countMovieNew.tmp) new movies
 echo $(cat countTVCurrent.tmp) current tv episodes
 echo $(cat countTVNew.tmp) new tv episodes
-[ -f "countDeleted.m3u" ] && echo $(cat countDeleted.tmp) files deleted
+echo $(cat countDeleted.tmp) files deleted
 
 echo $(cat countMovieCurrent.tmp) current movies >> ${vLOG}
 echo $(cat countMovieNew.tmp) new movies >> ${vLOG}
 echo $(cat countTVCurrent.tmp) current tv episodes >> ${vLOG}
 echo $(cat countTVNew.tmp) new tv episodes >> ${vLOG}
-[ -f "countDeleted.m3u" ] && echo $(cat countDeleted.tmp) files deleted >> ${vLOG}
+echo $(cat countDeleted.tmp) files deleted >> ${vLOG}
 
 [ -f "${vFILEPROCESSEDLOG}" ] && rm "${vFILEPROCESSEDLOG}"
 [ -f "${vFILEEXISTINGLOG}" ] && rm "${vFILEEXISTINGLOG}"
