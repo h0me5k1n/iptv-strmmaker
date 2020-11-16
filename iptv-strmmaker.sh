@@ -5,6 +5,9 @@ vLOG="$SCRIPTDIR/${SCRIPTNAME%.*}.log"
 vFILEPROCESSEDLOG="$SCRIPTDIR/${SCRIPTNAME%.*}-FILESPROCESSED.log"
 vFILEEXISTINGLOG="$SCRIPTDIR/${SCRIPTNAME%.*}-FILESEXISTING.log"
 vFILESTODELETE="$SCRIPTDIR/${SCRIPTNAME%.*}-FILESTODELETE.log"
+vNewTV="$SCRIPTDIR/${SCRIPTNAME%.*}-NewTV.log"
+vNewMOVIES="$SCRIPTDIR/${SCRIPTNAME%.*}-NewMOVIES.log"
+vFILESTODELETE="$SCRIPTDIR/${SCRIPTNAME%.*}-FILESTODELETE.log"
 LOCKFILE="$SCRIPTDIR/${SCRIPTNAME%.*}.lock"
 
 #source "$SCRIPTDIR/vodselection-tv"
@@ -12,7 +15,7 @@ LOCKFILE="$SCRIPTDIR/${SCRIPTNAME%.*}.lock"
 
 # Log function
 PrintLog(){
- echo "[`date`] - ${*}" >> ${vLOG} 
+ echo "[`date`] - ${*}" >> "${vLOG}" 
 }
 
 # counter function
@@ -107,7 +110,9 @@ WriteSTRMFile_TV(){
  vSTRMFile="$OUTPUTDIR/STRM TV/"
  vSTRMFile+="$vSeries/Season $vSeason/$vSeries "
  vSTRMFile+="S${vSeason}"
- vSTRMFile+="E${vEpisode}.strm"
+ vSTRMFile+="E${vEpisode}"
+ vTVEpisode="${vSTRMFile##*/}"
+ vSTRMFile+=".strm"
 # check if file contents are different - only write if different
  if [ -f "$vSTRMFile" ]; then
   content=$(cat "$vSTRMFile")
@@ -115,17 +120,18 @@ WriteSTRMFile_TV(){
    echo "$vMediaUrl" > "$vSTRMFile"
    AddCounter countTVCurrent
    PrintLog "WROTE UPDATED LINK - $vSTRMFile"
-   echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
+   echo "$vSTRMFile" >> "${vFILEPROCESSEDLOG}"
   else
    AddCounter countTVCurrent
    PrintLog "ALREADY EXISTS - $vSTRMFile"
-   echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
+   echo "$vSTRMFile" >> "${vFILEPROCESSEDLOG}"
   fi
  else 
   echo "$vMediaUrl" > "$vSTRMFile"
   AddCounter countTVNew
-  PrintLog "WROTE NEW - $vSTRMFile"   
-  echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
+  PrintLog "WROTE NEW - $vSTRMFile"
+  echo "> $vTVEpisode" >> "${vNewTV}"
+  echo "$vSTRMFile" >> "${vFILEPROCESSEDLOG}"
  fi
 }
 
@@ -163,17 +169,18 @@ WriteSTRMFile_Movies(){
    echo "$vMediaUrl" > "$vSTRMFile"
    AddCounter countMovieCurrent
    PrintLog "WROTE UPDATED LINK - $vSTRMFile"
-   echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
+   echo "$vSTRMFile" >> "${vFILEPROCESSEDLOG}"
   else
    AddCounter countMovieCurrent
    PrintLog "ALREADY EXISTS - $vSTRMFile"
-   echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
+   echo "$vSTRMFile" >> "${vFILEPROCESSEDLOG}"
   fi
  else 
   echo "$vMediaUrl" > "$vSTRMFile"
   AddCounter countMovieNew
-  PrintLog "WROTE NEW - $vSTRMFile"   
-  echo "$vSTRMFile" >> ${vFILEPROCESSEDLOG}
+  PrintLog "WROTE NEW - $vSTRMFile"
+  echo "> $vMovieName" >> "${vNewMOVIES}"
+  echo "$vSTRMFile" >> "${vFILEPROCESSEDLOG}"
  fi
 }
 
@@ -294,8 +301,8 @@ done
 
 # purging strm files not processed during this script run 
 #find "$OUTPUTDIR/STRM"* -name "*.strm" -mmin +60 -exec rm "{}" \;
-find "$OUTPUTDIR/STRM"* -name "*.strm" -exec echo "{}" >> ${vFILEEXISTINGLOG} \;
-grep -Fxv -f ${vFILEPROCESSEDLOG} ${vFILEEXISTINGLOG} > ${vFILESTODELETE}
+find "$OUTPUTDIR/STRM"* -name "*.strm" -exec echo "{}" >> "${vFILEEXISTINGLOG}" \;
+grep -Fxv -f "${vFILEPROCESSEDLOG}" "${vFILEEXISTINGLOG}" > "${vFILESTODELETE}"
 # if there are files to delete - remove them
 if [ -f "${vFILESTODELETE}" ]; then
  while read -r filename; do
@@ -310,18 +317,24 @@ find "$OUTPUTDIR/STRM"* -type d -exec rmdir "{}" + 2>/dev/null
 
 echo $(cat countMovieCurrent.tmp) current movies
 echo $(cat countMovieNew.tmp) new movies
+[ -f "${vNewMOVIES}" ] && cat "${vNewMOVIES}"
 echo $(cat countTVCurrent.tmp) current tv episodes
 echo $(cat countTVNew.tmp) new tv episodes
+[ -f "${vNewTV}" ] && cat "${vNewTV}"
 echo $(cat countDeleted.tmp) files deleted
 
-echo $(cat countMovieCurrent.tmp) current movies >> ${vLOG}
-echo $(cat countMovieNew.tmp) new movies >> ${vLOG}
-echo $(cat countTVCurrent.tmp) current tv episodes >> ${vLOG}
-echo $(cat countTVNew.tmp) new tv episodes >> ${vLOG}
-echo $(cat countDeleted.tmp) files deleted >> ${vLOG}
+echo $(cat countMovieCurrent.tmp) current movies >> "${vLOG}"
+echo $(cat countMovieNew.tmp) new movies >> "${vLOG}"
+[ -f "${vNewMOVIES}" ] && cat "${vNewMOVIES}" >> "${vLOG}"
+echo $(cat countTVCurrent.tmp) current tv episodes >> "${vLOG}"
+echo $(cat countTVNew.tmp) new tv episodes >> "${vLOG}"
+[ -f "${vNewTV}" ] && cat "${vNewTV}" >> "${vLOG}"
+echo $(cat countDeleted.tmp) files purged after removal from the playlist >> "${vLOG}"
 
 [ -f "${vFILEPROCESSEDLOG}" ] && rm "${vFILEPROCESSEDLOG}"
 [ -f "${vFILEEXISTINGLOG}" ] && rm "${vFILEEXISTINGLOG}"
 [ -f "${vFILESTODELETE}" ] && rm "${vFILESTODELETE}"
+[ -f "${vNewTV}" ] && rm "${vNewTV}"
+[ -f "${vNewMOVIES}" ] && rm "${vNewMOVIES}"
 rm *.m3u
 rm *.tmp
