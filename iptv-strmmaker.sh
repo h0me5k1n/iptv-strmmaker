@@ -321,7 +321,7 @@ echo $(cat countMovieNew.tmp) new movies
 echo $(cat countTVCurrent.tmp) current tv episodes
 echo $(cat countTVNew.tmp) new tv episodes
 [ -f "${vNewTV}" ] && cat "${vNewTV}"
-echo $(cat countDeleted.tmp) files deleted
+echo $(cat countDeleted.tmp) files purged after removal from the playlist
 
 echo $(cat countMovieCurrent.tmp) current movies >> "${vLOG}"
 echo $(cat countMovieNew.tmp) new movies >> "${vLOG}"
