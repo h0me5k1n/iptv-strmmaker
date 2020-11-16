@@ -188,6 +188,7 @@ WriteSTRMFile_Movies(){
 vTEMPFILE=temp.m3u
 
 # PROCESSING
+echo "[`date`] - Script started"
 
 cd $SCRIPTDIR
 [ -f "${vLOG}" ] && rm "${vLOG}"
@@ -338,3 +339,5 @@ echo $(cat countDeleted.tmp) files purged after removal from the playlist >> "${
 [ -f "${vNewMOVIES}" ] && rm "${vNewMOVIES}"
 rm *.m3u
 rm *.tmp
+
+echo "[`date`] - Script completed"
