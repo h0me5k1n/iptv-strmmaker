@@ -18,7 +18,7 @@ The following files should be edited and saved without the ".sample" extensions 
 * vodselection-tv
   * regex formatting can be used in the file
   * this matches to the group-title entry in the m3u file (usually named after the tv series)
-    * UPDATE: a compare is also checked against tvg-name as some playlists do not use the group-title to categorise TV series. When this is required, ".*" will always be needed as the TV series name is almost always followed by a series and episode reference
+    * UPDATE: a compare is also checked against tvg-name as some playlists do not use the group-title to categorise TV series. When this is required, ".*" will always be needed after at the end of the vodselection-tv line as the TV series name is almost always followed by a series and episode reference
   * entries in the m3u file must contain "season" and "episode" references like "S01 E02" or "S01E02" (with or without a space)
   * the url entries in the m3u file for tv series related entries must have "/series/" in the url
 * vodselection-movies
