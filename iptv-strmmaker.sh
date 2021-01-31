@@ -228,6 +228,9 @@ fi
 sed -i 's/^M$//' "$vTEMPFILE"
 sed -i 's/\r$//' "$vTEMPFILE"
 
+# fix dollar signs! replace with "s"
+sed -i 's/\$/s/g' "$vTEMPFILE"
+
 # remove blank lines
 PrintLog "Removing blank lines from $vTEMPFILE"
 cat "$vTEMPFILE" | sed '/^$/d' > 1_remblank.tmp
@@ -290,7 +293,10 @@ cat "$input" | while read -r line
  do
 #  PrintLog "Processing $line from $input"
   cat 6_vodentries_tv.tmp | grep -E '^.*S[[:digit:]]{2}[[:space:]]*E[[:digit:]]{2}.*$' | grep -iE "group-title=\"$line\"" | ScanEntries_TV
-done 
+  # added the below line to process tv series that don't use group-title. Duplicate entries found should create/edit the same output file
+  cat 6_vodentries_tv.tmp | grep -E '^.*S[[:digit:]]{2}[[:space:]]*E[[:digit:]]{2}.*$' | grep -iE "tvg-name=\"$line\"" | ScanEntries_TV
+done
+
 
 # write strm files for movies vod entries
 input=vodselection-movies
@@ -337,7 +343,7 @@ echo $(cat countDeleted.tmp) files purged after removal from the playlist >> "${
 [ -f "${vFILESTODELETE}" ] && rm "${vFILESTODELETE}"
 [ -f "${vNewTV}" ] && rm "${vNewTV}"
 [ -f "${vNewMOVIES}" ] && rm "${vNewMOVIES}"
-rm *.m3u
-rm *.tmp
+#rm *.m3u
+#rm *.tmp
 
 echo "[`date`] - Script completed"
