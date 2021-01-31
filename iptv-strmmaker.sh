@@ -343,7 +343,7 @@ echo $(cat countDeleted.tmp) files purged after removal from the playlist >> "${
 [ -f "${vFILESTODELETE}" ] && rm "${vFILESTODELETE}"
 [ -f "${vNewTV}" ] && rm "${vNewTV}"
 [ -f "${vNewMOVIES}" ] && rm "${vNewMOVIES}"
-#rm *.m3u
-#rm *.tmp
+rm *.m3u
+rm *.tmp
 
 echo "[`date`] - Script completed"
